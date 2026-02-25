@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>斷捨離顧問 - 理性實踐版</title>
+    <style>
+        :root { --slate: #475569; --cool-gray: #f8fafc; --accent: #6366f1; }
+        body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; background: var(--cool-gray); color: #1e293b; padding: 20px; margin: 0; }
+        .container { max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px; height: 95vh; }
+        h1 { text-align: center; color: var(--slate); margin: 10px 0; font-weight: 600; font-size: 1.4rem; }
+        .box { background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        
+        .preview-container { text-align: center; display: none; margin-top: 10px; }
+        #previewImage { max-width: 100%; max-height: 200px; border-radius: 6px; }
+        
+        #chat { flex-grow: 1; overflow-y: auto; background: #fff; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 12px; }
+        .msg { padding: 12px 16px; border-radius: 12px; line-height: 1.6; max-width: 85%; font-size: 15px; white-space: pre-wrap; }
+        .coach { background: #f1f5f9; color: #334155; align-self: flex-start; border-left: 4px solid var(--accent); }
+        .user { background: var(--accent); color: white; align-self: flex-end; }
+        
+        .upload-btn { background: #fff; border: 2px dashed #cbd5e1; color: var(--slate); padding: 15px; text-align: center; cursor: pointer; border-radius: 12px; transition: 0.2s; }
+        .upload-btn:hover { border-color: var(--accent); color: var(--accent); }
+        
+        .input-group { display: flex; gap: 10px; background: #fff; padding: 10px; border-radius: 15px; border: 1px solid #e2e8f0; }
+        textarea#userInput { 
+            flex: 1; padding: 8px; border: none; outline: none; background: transparent; 
+            resize: none; font-family: inherit; font-size: 15px; height: 24px; max-height: 100px;
+        }
+        button#sendBtn { align-self: flex-end; padding: 8px 20px; background: var(--accent); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; }
+        button:disabled { background: #cbd5e1; cursor: not-allowed; }
+        #status { font-size: 12px; color: #94a3b8; text-align: center; height: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📊 斷捨離生活顧問</h1>
+    
+    <div class="box">
+        <input type="password" id="apiKey" style="width: 100%; box-sizing: border-box; border: none; outline: none;" placeholder="輸入 API Key 開始分析">
+    </div>
+
+    <div class="box upload-btn" onclick="document.getElementById('fileInput').click()">
+        🔍 提交物品影像進行理性評估
+        <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleFile(event)">
+        <div class="preview-container" id="previewContainer">
+            <img id="previewImage" src="" alt="評估對象">
+        </div>
+    </div>
+
+    <div id="chat">
+        <div class="msg coach">你好。我是你的空間管理顧問。請上傳物品，我將從實用性、空間佔比與使用頻率為你提供精確建議。</div>
+    </div>
+
+    <div id="status"></div>
+
+    <div class="input-group">
+        <textarea id="userInput" placeholder="請回答提問... (Shift+Enter 換行)" disabled rows="1"></textarea>
+        <button id="sendBtn" onclick="sendReply()" disabled>分析</button>
+    </div>
+</div>
+
+<script>
+    let currentHistory = [], imgB64 = "", imgMime = "";
+    
+    // 中性、理性且犀利的人設
+    const COACH_PROMPT = "你是一位理智、冷靜且犀利的空間管理顧問。你說話不帶過多情緒，但邏輯極強。任務：1. 辨識物品並指出其折舊程度。2. 提出3個關於「空間效率」與「真實使用率」的數據化提問。3. 根據回答給予【留存】或【移除】的專業判決，並附上空間優化建議。";
+
+    function handleFile(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        imgMime = file.type;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            document.getElementById('previewImage').src = ev.target.result;
+            document.getElementById('previewContainer').style.display = 'block';
+            imgB64 = ev.target.result.split(',')[1];
+            addMsg('user', '（提交物品影像，請求效率分析）');
+            callAI(true);
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function addMsg(role, text) {
+        const c = document.getElementById('chat');
+        const d = document.createElement('div');
+        d.className = `msg ${role}`;
+        d.innerText = text;
+        c.appendChild(d);
+        c.scrollTop = c.scrollHeight;
+    }
+
+    async function callAI(isFirst, text = "") {
+        const key = document.getElementById('apiKey').value.trim();
+        if (!key) return alert("請輸入 API Key");
+        document.getElementById('status').innerText = "正在進行邏輯運算...";
+        
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
+
+        if (isFirst) {
+            currentHistory = [{ role: "user", parts: [{ text: "指令：" + COACH_PROMPT }, { inlineData: { mimeType: imgMime, data: imgB64 } }] }];
+        } else {
+            currentHistory.push({ role: "user", parts: [{ text: text }] });
+        }
+
+        try {
+            const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: currentHistory }) });
+            const d = await r.json();
+            const reply = d.candidates[0].content.parts[0].text;
+            addMsg('coach', reply);
+            currentHistory.push({ role: 'model', parts: [{ text: reply }] });
+            document.getElementById('userInput').disabled = false;
+            document.getElementById('sendBtn').disabled = false;
+            document.getElementById('userInput').focus();
+        } catch (err) { addMsg('coach', "連線錯誤：" + err.message); }
+        finally { document.getElementById('status').innerText = ""; }
+    }
+
+    function sendReply() {
+        const i = document.getElementById('userInput');
+        const t = i.value.trim();
+        if (!t) return;
+        addMsg('user', t);
+        i.value = ""; i.disabled = true;
+        i.style.height = '24px';
+        callAI(false, t);
+    }
+
+    const inputArea = document.getElementById('userInput');
+    inputArea.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendReply();
+        }
+    });
+
+    inputArea.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
+    });
+</script>
+
+</body>
+</html>
