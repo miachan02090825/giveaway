@@ -1,144 +1,508 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
-    <title>斷捨離顧問 - 理性實踐版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>斷捨離顧問 - 極簡理智版</title>
     <style>
-        :root { --slate: #475569; --cool-gray: #f8fafc; --accent: #6366f1; }
-        body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; background: var(--cool-gray); color: #1e293b; padding: 20px; margin: 0; }
-        .container { max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px; height: 95vh; }
-        h1 { text-align: center; color: var(--slate); margin: 10px 0; font-weight: 600; font-size: 1.4rem; }
-        .box { background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
-        
-        .preview-container { text-align: center; display: none; margin-top: 10px; }
-        #previewImage { max-width: 100%; max-height: 200px; border-radius: 6px; }
-        
-        #chat { flex-grow: 1; overflow-y: auto; background: #fff; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 12px; }
-        .msg { padding: 12px 16px; border-radius: 12px; line-height: 1.6; max-width: 85%; font-size: 15px; white-space: pre-wrap; }
-        .coach { background: #f1f5f9; color: #334155; align-self: flex-start; border-left: 4px solid var(--accent); }
-        .user { background: var(--accent); color: white; align-self: flex-end; }
-        
-        .upload-btn { background: #fff; border: 2px dashed #cbd5e1; color: var(--slate); padding: 15px; text-align: center; cursor: pointer; border-radius: 12px; transition: 0.2s; }
-        .upload-btn:hover { border-color: var(--accent); color: var(--accent); }
-        
-        .input-group { display: flex; gap: 10px; background: #fff; padding: 10px; border-radius: 15px; border: 1px solid #e2e8f0; }
-        textarea#userInput { 
-            flex: 1; padding: 8px; border: none; outline: none; background: transparent; 
-            resize: none; font-family: inherit; font-size: 15px; height: 24px; max-height: 100px;
+        :root {
+            --slate: #334155;
+            --slate-light: #64748b;
+            --cool-gray: #f8fafc;
+            --accent: #4f46e5;
+            --accent-hover: #4338ca;
+            --card-bg: #ffffff;
+            --danger: #e11d48;
+            --success: #10b981;
         }
-        button#sendBtn { align-self: flex-end; padding: 8px 20px; background: var(--accent); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; }
-        button:disabled { background: #cbd5e1; cursor: not-allowed; }
-        #status { font-size: 12px; color: #94a3b8; text-align: center; height: 15px; }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'PingFang TC', 'Microsoft JhengHei', system-ui, -apple-system, sans-serif;
+            background: var(--cool-gray);
+            color: var(--slate);
+            padding: 20px 10px;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px; /* 加寬容器以容納橫向區塊 */
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            height: 95vh;
+            max-height: 900px;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--slate);
+            margin: 5px 0 10px 0;
+            font-weight: 700;
+            font-size: 1.5rem;
+            letter-spacing: 0.5px;
+        }
+
+        .box {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border: 1px solid #e2e8f0;
+        }
+
+        /* 上傳區塊優化 UX */
+        .upload-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #f1f5f9;
+            border: 2px dashed #cbd5e1;
+            color: var(--slate-light);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            gap: 8px;
+        }
+
+        .upload-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: #e0e7ff;
+        }
+
+        .upload-icon {
+            font-size: 2rem;
+        }
+
+        .preview-container {
+            text-align: center;
+            display: none;
+            margin-top: 15px;
+            width: 100%;
+        }
+
+        #previewImage {
+            max-width: 100%;
+            max-height: 180px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            object-fit: contain;
+        }
+
+        /* 分析儀表板樣式 - 改為橫向排列 */
+        #dashboard {
+            display: none;
+            flex-direction: row; /* 橫向展開 */
+            gap: 12px;
+            align-items: stretch;
+        }
+
+        .report-card {
+            background: var(--card-bg);
+            border-top: 5px solid var(--accent); /* 邊框改到上方較適合橫向版面 */
+            border-radius: 10px;
+            padding: 15px 18px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            flex: 1; /* 平均分配寬度 */
+            min-width: 0; /* 避免文字撐破 Flexbox */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .report-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .report-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 15px;
+            color: var(--slate);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .report-card p {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            color: #475569;
+            word-break: break-word;
+        }
+
+        /* 手機版自適應：小螢幕時自動轉回上下排列 */
+        @media (max-width: 650px) {
+            #dashboard {
+                flex-direction: column;
+            }
+            .report-card {
+                border-top: none;
+                border-left: 5px solid var(--accent);
+            }
+        }
+
+        /* 聊天區塊 - 加大空間 */
+        #chat {
+            flex-grow: 1;
+            overflow-y: auto;
+            background: var(--card-bg);
+            padding: 16px;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 250px; /* 加大最小高度 */
+            scroll-behavior: smooth;
+        }
+
+        .msg {
+            padding: 12px 16px;
+            border-radius: 16px;
+            line-height: 1.5;
+            max-width: 85%;
+            font-size: 14px;
+            white-space: pre-wrap;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .coach {
+            background: #f1f5f9;
+            color: var(--slate);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .user {
+            background: var(--accent);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        /* 輸入區塊 */
+        .input-group {
+            display: flex;
+            gap: 12px;
+            background: var(--card-bg);
+            padding: 12px;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            align-items: flex-end;
+        }
+
+        textarea#userInput {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            outline: none;
+            background: transparent;
+            resize: none;
+            font-family: inherit;
+            font-size: 15px;
+            height: 40px;
+            max-height: 120px;
+            line-height: 1.5;
+            transition: height 0.2s ease;
+        }
+
+        textarea#userInput:disabled {
+            background: #f8fafc;
+            color: #94a3b8;
+            cursor: not-allowed;
+            border-radius: 8px;
+        }
+
+        button#sendBtn {
+            padding: 10px 20px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: background 0.2s ease;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+        }
+
+        button#sendBtn:hover:not(:disabled) {
+            background: var(--accent-hover);
+        }
+
+        button#sendBtn:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+        }
+
+        /* 狀態文字動畫 */
+        #status {
+            font-size: 13px;
+            color: var(--accent);
+            text-align: center;
+            height: 18px;
+            font-weight: 500;
+        }
+
+        .pulse {
+            animation: pulse-animation 1.5s infinite;
+        }
+
+        @keyframes pulse-animation {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+
+        /* 捲軸美化 */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
+
 <body>
 
-<div class="container">
-    <h1>📊 斷捨離生活顧問</h1>
-    
-    <div class="box">
-        <input type="password" id="apiKey" style="width: 100%; box-sizing: border-box; border: none; outline: none;" placeholder="輸入 API Key 開始分析">
-    </div>
+    <div class="container">
+        <h1>📊 斷捨離生活顧問</h1>
 
-    <div class="box upload-btn" onclick="document.getElementById('fileInput').click()">
-        🔍 提交物品影像進行理性評估
-        <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleFile(event)">
-        <div class="preview-container" id="previewContainer">
-            <img id="previewImage" src="" alt="評估對象">
+        <div class="box upload-btn" onclick="document.getElementById('fileInput').click()" id="uploadZone">
+            <span class="upload-icon">📸</span>
+            <span style="font-weight: 600; font-size: 15px;">點擊上傳物品影像</span>
+            <span style="font-size: 12px;">系統將進行極簡效率分析</span>
+            <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleFile(event)">
+            
+            <div class="preview-container" id="previewContainer">
+                <img id="previewImage" src="" alt="評估對象">
+            </div>
+        </div>
+
+        <div id="dashboard">
+            <div class="report-card" style="border-top-color: #f59e0b;" id="card1">
+                <h3>📦 物品狀態</h3>
+                <p id="block1">等待影像載入...</p>
+            </div>
+            <div class="report-card" style="border-top-color: #3b82f6;" id="card2">
+                <h3>📉 核心提問</h3>
+                <p id="block2">等待影像載入...</p>
+            </div>
+            <div class="report-card" style="border-top-color: #10b981;" id="card3">
+                <h3>⚖️ 最終判決</h3>
+                <p id="block3">等待您回覆提問後生成判決...</p>
+            </div>
+        </div>
+
+        <div id="chat">
+            <div class="msg coach">您好，我是您的極簡空間顧問。請上傳物品照片，我將為您進行快速評估。</div>
+        </div>
+
+        <div id="status"></div>
+
+        <div class="input-group">
+            <textarea id="userInput" placeholder="請在此簡短回覆提問... (Shift+Enter 換行)" disabled rows="1"></textarea>
+            <button id="sendBtn" onclick="sendReply()" disabled>發送</button>
         </div>
     </div>
 
-    <div id="chat">
-        <div class="msg coach">你好。我是你的空間管理顧問。請上傳物品，我將從實用性、空間佔比與使用頻率為你提供精確建議。</div>
-    </div>
+    <script>
+        let currentHistory = [], imgB64 = "", imgMime = "";
 
-    <div id="status"></div>
-
-    <div class="input-group">
-        <textarea id="userInput" placeholder="請回答提問... (Shift+Enter 換行)" disabled rows="1"></textarea>
-        <button id="sendBtn" onclick="sendReply()" disabled>分析</button>
-    </div>
-</div>
-
-<script>
-    let currentHistory = [], imgB64 = "", imgMime = "";
-    
-    // 中性、理性且犀利的人設
-    const COACH_PROMPT = "你是一位理智、冷靜且犀利的空間管理顧問。你說話不帶過多情緒，但邏輯極強。任務：1. 辨識物品並指出其折舊程度。2. 提出3個關於「空間效率」與「真實使用率」的數據化提問。3. 根據回答給予【留存】或【移除】的專業判決，並附上空間優化建議。";
-
-    function handleFile(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        imgMime = file.type;
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            document.getElementById('previewImage').src = ev.target.result;
-            document.getElementById('previewContainer').style.display = 'block';
-            imgB64 = ev.target.result.split(',')[1];
-            addMsg('user', '（提交物品影像，請求效率分析）');
-            callAI(true);
-        };
-        reader.readAsDataURL(file);
-    }
-
-    function addMsg(role, text) {
-        const c = document.getElementById('chat');
-        const d = document.createElement('div');
-        d.className = `msg ${role}`;
-        d.innerText = text;
-        c.appendChild(d);
-        c.scrollTop = c.scrollHeight;
-    }
-
-    async function callAI(isFirst, text = "") {
-        const key = document.getElementById('apiKey').value.trim();
-        if (!key) return alert("請輸入 API Key");
-        document.getElementById('status').innerText = "正在進行邏輯運算...";
+        // 核心修正：極簡化 Prompt，強制 AI 縮短字數、直指核心
+        const COACH_PROMPT = `你是一位極簡、理智的空間管理顧問。說話必須極度簡潔、一針見血，不說廢話。請嚴格遵守以下格式回覆，必須使用 '|||' 作為區塊分隔符號：
         
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
+第一區塊：[物品名稱] - 折舊程度：[高/中/低]
+|||
+第二區塊：(請列出3個犀利提問，每題不超過15字)
+1. [空間效率提問]
+2. [真實使用率提問]
+3. [替代品提問]
+|||
+第三區塊：如果使用者尚未回答，請輸出「請在下方回答提問。」；如果使用者已經回答，請給予【留存】或【移除】的最終判決，並用一句話(20字內)給出最佳行動建議。`;
 
-        if (isFirst) {
-            currentHistory = [{ role: "user", parts: [{ text: "指令：" + COACH_PROMPT }, { inlineData: { mimeType: imgMime, data: imgB64 } }] }];
-        } else {
-            currentHistory.push({ role: "user", parts: [{ text: text }] });
+        function handleFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            imgMime = file.type;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const previewImg = document.getElementById('previewImage');
+                previewImg.src = ev.target.result;
+                document.getElementById('previewContainer').style.display = 'block';
+                
+                // 隱藏原本的提示文字
+                const spans = document.querySelectorAll('.upload-btn > span');
+                spans.forEach(span => span.style.display = 'none');
+                document.getElementById('uploadZone').style.padding = '10px';
+
+                imgB64 = ev.target.result.split(',')[1];
+                
+                // 重置儀表板狀態
+                document.getElementById('dashboard').style.display = 'flex';
+                document.getElementById('block1').innerText = "辨識中...";
+                document.getElementById('block2').innerText = "運算提問中...";
+                document.getElementById('block3').innerText = "等待判定...";
+                document.getElementById('card3').style.borderTopColor = "#94a3b8"; // 重置為灰色
+                // 針對手機版重置左邊框顏色
+                if(window.innerWidth <= 650) {
+                    document.getElementById('card3').style.borderLeftColor = "#94a3b8";
+                }
+                
+                addMsg('user', '（已上傳影像，請分析）');
+                callAI(true);
+            };
+            reader.readAsDataURL(file);
         }
 
-        try {
-            const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: currentHistory }) });
-            const d = await r.json();
-            const reply = d.candidates[0].content.parts[0].text;
-            addMsg('coach', reply);
-            currentHistory.push({ role: 'model', parts: [{ text: reply }] });
-            document.getElementById('userInput').disabled = false;
-            document.getElementById('sendBtn').disabled = false;
-            document.getElementById('userInput').focus();
-        } catch (err) { addMsg('coach', "連線錯誤：" + err.message); }
-        finally { document.getElementById('status').innerText = ""; }
-    }
-
-    function sendReply() {
-        const i = document.getElementById('userInput');
-        const t = i.value.trim();
-        if (!t) return;
-        addMsg('user', t);
-        i.value = ""; i.disabled = true;
-        i.style.height = '24px';
-        callAI(false, t);
-    }
-
-    const inputArea = document.getElementById('userInput');
-    inputArea.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendReply();
+        function addMsg(role, text) {
+            const c = document.getElementById('chat');
+            const d = document.createElement('div');
+            d.className = `msg ${role}`;
+            d.innerText = text;
+            c.appendChild(d);
+            
+            // 平滑捲動到底部
+            setTimeout(() => {
+                c.scrollTo({ top: c.scrollHeight, behavior: 'smooth' });
+            }, 50);
         }
-    });
 
-    inputArea.addEventListener('input', function() {
-        this.style.height = 'auto';
-        this.style.height = (this.scrollHeight) + 'px';
-    });
-</script>
+        function setStatus(text, isPulsing = false) {
+            const statusEl = document.getElementById('status');
+            statusEl.innerText = text;
+            if (isPulsing) {
+                statusEl.classList.add('pulse');
+            } else {
+                statusEl.classList.remove('pulse');
+            }
+        }
+
+        async function callAI(isFirst, text = "") {
+            setStatus("系統分析運算中...", true);
+            document.getElementById('userInput').disabled = true;
+            document.getElementById('sendBtn').disabled = true;
+
+            const url = "https://giveaway-proxy.miachan.workers.dev";
+
+            if (isFirst) {
+                currentHistory = [{ role: "user", parts: [{ text: "指令：" + COACH_PROMPT }, { inlineData: { mimeType: imgMime, data: imgB64 } }] }];
+            } else {
+                currentHistory.push({ role: "user", parts: [{ text: text }] });
+            }
+
+            try {
+                // 依據偏好設定升級為 Pro 模型
+                const r = await fetch(url, { 
+                    method: "POST", 
+                    headers: { "Content-Type": "application/json" }, 
+                    body: JSON.stringify({ model: "gemini-2.5-pro", contents: currentHistory }) 
+                });
+                const d = await r.json();
+                
+                if(d.error) throw new Error(d.error.message || "API 連線失敗");
+
+                const reply = d.candidates[0].content.parts[0].text;
+                const parts = reply.split("|||");
+                
+                if (parts.length >= 3) {
+                    document.getElementById('block1').innerText = parts[0].trim();
+                    document.getElementById('block2').innerText = parts[1].trim();
+                    document.getElementById('block3').innerText = parts[2].trim();
+                    
+                    if(!isFirst) {
+                        // 判決後改變邊框顏色給予視覺回饋
+                        const resultText = parts[2].trim();
+                        let borderColor = "";
+                        if(resultText.includes('移除')) {
+                            borderColor = "var(--danger)";
+                        } else if (resultText.includes('留存')) {
+                            borderColor = "var(--success)";
+                        }
+
+                        if(borderColor) {
+                            if(window.innerWidth <= 650) {
+                                document.getElementById('card3').style.borderLeftColor = borderColor;
+                            } else {
+                                document.getElementById('card3').style.borderTopColor = borderColor;
+                            }
+                        }
+                    }
+
+                    const systemMsg = isFirst ? "報告已更新於上方，請針對「核心提問」簡短回覆。" : "判決結果已出爐，請查看上方最終判決。";
+                    addMsg('coach', systemMsg);
+                } else {
+                    addMsg('coach', reply);
+                }
+                
+                currentHistory.push({ role: 'model', parts: [{ text: reply }] });
+                
+                document.getElementById('userInput').disabled = false;
+                document.getElementById('sendBtn').disabled = false;
+                document.getElementById('userInput').focus();
+            } catch (err) { 
+                addMsg('coach', "連線錯誤：" + err.message); 
+                document.getElementById('userInput').disabled = false;
+                document.getElementById('sendBtn').disabled = false;
+            } finally { 
+                setStatus(""); 
+            }
+        }
+
+        function sendReply() {
+            const i = document.getElementById('userInput');
+            const t = i.value.trim();
+            if (!t) return;
+            addMsg('user', t);
+            i.value = ""; 
+            i.style.height = '40px'; // 重置為初始高度
+            callAI(false, t);
+        }
+
+        const inputArea = document.getElementById('userInput');
+        inputArea.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if(!this.disabled) sendReply();
+            }
+        });
+
+        // 讓 Textarea 高度隨內容平滑自動伸展
+        inputArea.addEventListener('input', function () {
+            this.style.height = '40px'; // 先重置才能正確縮小
+            const newHeight = Math.min(this.scrollHeight, 120);
+            this.style.height = newHeight + 'px';
+        });
+
+        // 視窗大小改變時的邊框調整
+        window.addEventListener('resize', function() {
+            const card3 = document.getElementById('card3');
+            if(window.innerWidth <= 650) {
+                card3.style.borderTopColor = 'transparent';
+                // 保持原有的左邊框邏輯
+            } else {
+                card3.style.borderLeftColor = 'transparent';
+                // 保持原有的上邊框邏輯
+            }
+        });
+    </script>
 
 </body>
+
 </html>
