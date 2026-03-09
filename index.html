@@ -40,7 +40,7 @@
 
         .container {
             width: 100%;
-            max-width: 1000px; /* 加寬以容納左右分割版面 */
+            max-width: 1000px;
             background: var(--surface);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
@@ -89,17 +89,17 @@
         /* 主要內容區 - 整體佈局 */
         .main-content {
             flex-grow: 1;
-            overflow: hidden; /* 鎖定主區域捲軸，讓對話框獨立捲動 */
-            padding: 16px 24px; /* 縮小上下邊距留給對話框 */
+            overflow: hidden; 
+            padding: 16px 24px; 
             display: flex;
             flex-direction: column;
-            gap: 12px; /* 縮小區塊垂直間距 */
+            gap: 12px; 
         }
 
         /* 頂部：左影像 + 右卡片 */
         .top-layout {
             display: flex;
-            gap: 16px; /* 縮小左右間距 */
+            gap: 16px; 
             flex-shrink: 0;
             align-items: stretch;
         }
@@ -114,7 +114,7 @@
 
         /* 右側儀表板區 */
         .right-panel {
-            display: none; /* 預設隱藏，上傳後顯示 */
+            display: none; 
             flex: 2;
             min-width: 320px;
         }
@@ -124,7 +124,7 @@
             flex-grow: 1;
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* 讓內部的 chat 區塊獨立捲動 */
+            overflow: hidden; 
         }
 
         /* 上傳區塊與預覽 */
@@ -144,11 +144,11 @@
             background: #f8fafc;
             border: 2px dashed #cbd5e1;
             border-radius: 16px;
-            padding: 20px 16px; /* 縮小內部留白 */
+            padding: 20px 16px; 
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             gap: 12px;
-            min-height: 120px; /* 大幅降低初始高度 */
+            min-height: 120px; 
         }
 
         .upload-btn:hover {
@@ -187,7 +187,7 @@
             display: none;
             width: 100%;
             height: 100%;
-            min-height: 140px; /* 降低預覽區最小高度 */
+            min-height: 140px; 
             background: rgba(0, 0, 0, 0.02);
             border: 1px solid var(--border);
             border-radius: 16px;
@@ -199,19 +199,19 @@
 
         #previewImage {
             max-width: 100%;
-            max-height: 160px; /* 將圖片高度大幅縮小，讓出空間給對話框 */
+            max-height: 160px; 
             width: auto;
             height: auto;
-            object-fit: contain; /* 保證原比例，絕對不裁切/放大 */
+            object-fit: contain; 
             display: block;
             border-radius: 8px;
         }
 
-        /* 儀表板 卡片網格 */
+        /* 儀表板 卡片網格：改為 2 欄配置 */
         #dashboard {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px; /* 縮小卡片彼此的間距 */
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px; 
             animation: slideUp 0.5s ease forwards;
             height: 100%;
         }
@@ -220,7 +220,7 @@
             background: #ffffff;
             border: 1px solid var(--border);
             border-radius: 16px;
-            padding: 16px; /* 稍微縮小卡片內部留白 */
+            padding: 16px; 
             display: flex;
             flex-direction: column;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
@@ -239,7 +239,6 @@
         }
 
         #card1::before { background: var(--warning); }
-        #card2::before { background: var(--secondary); }
         #card3::before { background: var(--success); transition: background 0.3s; }
 
         .report-card:hover {
@@ -295,7 +294,7 @@
             gap: 16px;
             border: 1px solid var(--border);
             height: 100%;
-            overflow-y: auto; /* 獨立的對話捲軸 */
+            overflow-y: auto; 
             scroll-behavior: smooth;
         }
 
@@ -458,19 +457,13 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* 捲軸美化 */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
         /* RWD 響應式：手機版保護機制 */
         @media (max-width: 768px) {
             .container { height: 100vh; border-radius: 0; max-height: none; border: none; }
             .top-layout { flex-direction: column; }
             .right-panel { width: 100%; min-width: auto; }
             #dashboard { grid-template-columns: 1fr; }
-            .main-content { overflow-y: auto; } /* 手機版整頁滑動 */
+            .main-content { overflow-y: auto; }
             .bottom-layout { overflow: visible; min-height: 300px; }
             #chat { overflow-y: visible; height: auto; }
         }
@@ -489,7 +482,7 @@
         </header>
 
         <main class="main-content">
-            <!-- 上半部：左影像 + 右卡片 -->
+            <!-- 上半部：左影像 + 右卡片 (簡化為兩格) -->
             <div class="top-layout">
                 <div class="left-panel">
                     <div class="upload-wrapper">
@@ -520,13 +513,6 @@
                                 物品狀態
                             </h3>
                             <div id="block1"></div>
-                        </div>
-                        <div class="report-card" id="card2">
-                            <h3>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                                核心提問
-                            </h3>
-                            <div id="block2"></div>
                         </div>
                         <div class="report-card" id="card3">
                             <h3>
@@ -570,19 +556,16 @@
     <script>
         let currentHistory = [], imgB64 = "", imgMime = "";
 
+        // 核心更新：強制 AI 吐出一個「濃縮提問」，讓我們能把它丟進聊天室裡！
         const COACH_PROMPT = `你是一位極簡、理智的空間管理顧問。說話必須極度簡潔、一針見血，不說廢話。請嚴格遵守以下格式回覆，必須使用 '|||' 作為區塊分隔符號：
         
 第一區塊：[物品名稱] - 折舊程度：[高/中/低]
 |||
-第二區塊：(請列出3個犀利提問，每題不超過15字)
-1. [空間效率提問]
-2. [真實使用率提問]
-3. [替代品提問]
+第二區塊：(請將空間效率、使用率或替代品等考量，濃縮成【1個】犀利且直指核心的綜合提問，方便使用者一次回覆，不超過30字)
 |||
-第三區塊：如果使用者尚未回答，請輸出「請在下方回答提問。」；如果使用者已經回答，請給予【留存】或【移除】的最終判決，並用一句話(20字內)給出最佳行動建議。`;
+第三區塊：如果使用者尚未回答，請輸出「等待您回覆提問後生成判決...」；如果使用者已經回答，請給予【留存】或【移除】的最終判決，並用一句話(20字內)給出最佳行動建議。`;
 
         const skeletonHTML = '<div class="skeleton"></div><div class="skeleton short"></div>';
-        const skeletonTallHTML = '<div class="skeleton tall"></div><div class="skeleton short"></div>';
 
         function handleFile(e) {
             const file = e.target.files[0];
@@ -593,16 +576,13 @@
                 const previewImg = document.getElementById('previewImage');
                 previewImg.src = ev.target.result;
                 
-                // 隱藏上傳鈕，顯示圖片與右側面板
                 document.getElementById('uploadZone').style.display = 'none'; 
                 document.getElementById('previewContainer').style.display = 'flex';
                 document.getElementById('rightPanel').style.display = 'block';
 
                 imgB64 = ev.target.result.split(',')[1];
                 
-                // 載入骨架屏
                 document.getElementById('block1').innerHTML = skeletonHTML;
-                document.getElementById('block2').innerHTML = skeletonTallHTML;
                 document.getElementById('block3').innerHTML = '等待判定...';
                 document.getElementById('card3').style.setProperty('--success', '#cbd5e1');
                 
@@ -632,7 +612,6 @@
             
             chatBox.appendChild(wrapper);
             
-            // 讓獨立的對話區塊平滑捲動到底部
             setTimeout(() => {
                 chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: 'smooth' });
             }, 50);
@@ -673,7 +652,7 @@
                 
                 if (parts.length >= 3) {
                     document.getElementById('block1').innerText = parts[0].trim();
-                    document.getElementById('block2').innerText = parts[1].trim();
+                    const coachQuestion = parts[1].trim(); // 取出關鍵提問
                     document.getElementById('block3').innerText = parts[2].trim();
                     
                     if(!isFirst) {
@@ -685,7 +664,10 @@
                         }
                     }
 
-                    const systemMsg = isFirst ? "專業報告已生成於右上角儀表板，請在下方對話框針對「核心提問」簡短回覆我。" : "判決結果已出爐，請查看右上方最終判定。";
+                    // 核心顯示邏輯：把提問整合進聊天對話框
+                    const systemMsg = isFirst 
+                        ? `分析報告已更新於上方。\n\n針對這件物品，我有一個關鍵問題：\n「${coachQuestion}」` 
+                        : "判決結果已出爐，請查看上方最終判定。";
                     addMsg('coach', systemMsg);
                 } else {
                     addMsg('coach', reply);
