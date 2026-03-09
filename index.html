@@ -762,7 +762,8 @@
                         document.getElementById('card3').style.setProperty('--success', '#f59e0b'); 
                     }
                     
-                    addMsg('coach', "判決結果已出爐，請查看上方最終判定。");
+                    // 讓最終判決同步顯示在對話框內，避免視覺焦點轉移
+                    addMsg('coach', "【最終判決】\n" + cleanVerdict);
                 }
                 
                 currentHistory.push({ role: 'model', parts: [{ text: reply }] });
