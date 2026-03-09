@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>斷捨離顧問 - 專業分析版</title>
     <style>
         :root {
@@ -31,7 +31,9 @@
             font-family: 'Inter', 'PingFang TC', 'Microsoft JhengHei', system-ui, sans-serif;
             background: var(--bg-gradient);
             color: var(--text-main);
+            /* 支援動態視窗高度 (dvh) 以避免手機瀏覽器工具列遮擋 */
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -49,6 +51,7 @@
             display: flex;
             flex-direction: column;
             height: 95vh;
+            height: 95dvh;
             max-height: 900px;
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.5);
@@ -349,11 +352,15 @@
         /* 底部輸入區 */
         .footer {
             padding: 16px 24px;
+            /* iPhone 底部導覽列防護 */
+            padding-bottom: calc(16px + env(safe-area-inset-bottom));
             background: rgba(255, 255, 255, 0.8);
             border-top: 1px solid var(--border);
             border-bottom-left-radius: 24px;
             border-bottom-right-radius: 24px;
             flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
         }
 
         #status {
@@ -477,13 +484,14 @@
 
         /* RWD 響應式：手機版保護機制 */
         @media (max-width: 768px) {
-            .container { height: 100vh; border-radius: 0; max-height: none; border: none; }
+            body { padding: 0; }
+            .container { height: 100vh; height: 100dvh; border-radius: 0; max-height: none; border: none; }
             .header { flex-direction: column; gap: 8px; }
             .top-layout { flex-direction: column; }
             .right-panel { width: 100%; min-width: auto; }
             #dashboard { grid-template-columns: 1fr; }
             .main-content { overflow-y: auto; }
-            .bottom-layout { overflow: visible; min-height: 300px; }
+            .bottom-layout { overflow: visible; min-height: 250px; flex-shrink: 0; }
             #chat { overflow-y: visible; height: auto; }
         }
     </style>
@@ -571,7 +579,7 @@
                 </button>
             </div>
 
-            <!-- 全域計數器移至最下方 (移除 display: none) -->
+            <!-- 全域計數器移至最下方 -->
             <div class="counter-badge" id="counterBadge">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                 <span>已協助 <strong id="globalCount">0</strong> 位實踐者</span>
@@ -590,15 +598,18 @@
         window.addEventListener('DOMContentLoaded', async () => {
             try {
                 const res = await fetch(`https://api.counterapi.dev/v1/${COUNTER_NAMESPACE}/${COUNTER_KEY}`);
-                // 只有在成功取得資料 (非 404) 時才覆蓋原本的 0
                 if (res.ok) {
                     const data = await res.json();
                     if(data.count !== undefined) {
                         document.getElementById('globalCount').innerText = data.count;
                     }
+                } else if (res.status === 404) {
+                    // 若尚未有任何計數記錄(回傳404)，穩固顯示 0
+                    document.getElementById('globalCount').innerText = "0";
                 }
             } catch (e) {
-                console.log('無法載入計數器資料');
+                console.log('無法載入計數器資料，顯示預設值 0');
+                document.getElementById('globalCount').innerText = "0";
             }
         });
 
@@ -651,11 +662,13 @@
             if (!localStorage.getItem('hasInquired_v1')) {
                 try {
                     const res = await fetch(`https://api.counterapi.dev/v1/${COUNTER_NAMESPACE}/${COUNTER_KEY}/up`);
-                    const data = await res.json();
-                    if(data.count !== undefined) {
-                        document.getElementById('globalCount').innerText = data.count;
-                        // 寫入標記，這個瀏覽器以後不管怎麼重整都不會再重複 +1
-                        localStorage.setItem('hasInquired_v1', 'true');
+                    if (res.ok) {
+                        const data = await res.json();
+                        if(data.count !== undefined) {
+                            document.getElementById('globalCount').innerText = data.count;
+                            // 寫入標記，這個瀏覽器以後不管怎麼重整都不會再重複 +1
+                            localStorage.setItem('hasInquired_v1', 'true');
+                        }
                     }
                 } catch (e) {
                     console.log('計數器更新失敗');
