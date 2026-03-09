@@ -56,7 +56,7 @@
 
         /* 頂部標題列 */
         .header {
-            padding: 20px 24px;
+            padding: 16px 24px;
             border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
@@ -457,9 +457,28 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* 移至底部的計數器樣式 */
+        .counter-badge {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 14px;
+            font-weight: 500;
+        }
+
+        .counter-badge strong {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
         /* RWD 響應式：手機版保護機制 */
         @media (max-width: 768px) {
             .container { height: 100vh; border-radius: 0; max-height: none; border: none; }
+            .header { flex-direction: column; gap: 8px; }
             .top-layout { flex-direction: column; }
             .right-panel { width: 100%; min-width: auto; }
             #dashboard { grid-template-columns: 1fr; }
@@ -482,7 +501,7 @@
         </header>
 
         <main class="main-content">
-            <!-- 上半部：左影像 + 右卡片 (簡化為兩格) -->
+            <!-- 上半部：左影像 + 右卡片 -->
             <div class="top-layout">
                 <div class="left-panel">
                     <div class="upload-wrapper">
@@ -544,11 +563,18 @@
                 <div class="spinner" id="loadingSpinner"></div>
                 <span id="statusText"></span>
             </div>
+            
             <div class="input-group">
                 <textarea id="userInput" placeholder="請在此簡短回覆提問... (Shift+Enter 換行)" disabled rows="1"></textarea>
                 <button id="sendBtn" onclick="sendReply()" disabled title="發送">
                     <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                 </button>
+            </div>
+
+            <!-- 全域計數器移至最下方 (移除 display: none) -->
+            <div class="counter-badge" id="counterBadge">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                <span>已協助 <strong id="globalCount">0</strong> 位實踐者</span>
             </div>
         </footer>
     </div>
@@ -556,14 +582,38 @@
     <script>
         let currentHistory = [], imgB64 = "", imgMime = "";
 
-        // 核心更新：強制 AI 吐出一個「濃縮提問」，讓我們能把它丟進聊天室裡！
-        const COACH_PROMPT = `你是一位極簡、理智的空間管理顧問。說話必須極度簡潔、一針見血，不說廢話。請嚴格遵守以下格式回覆，必須使用 '|||' 作為區塊分隔符號：
+        // 設定計數器的專屬命名空間與鍵值
+        const COUNTER_NAMESPACE = 'giveaway_app_miachan';
+        const COUNTER_KEY = 'unique_inquiries';
+
+        // 頁面載入時：向伺服器拉取目前總計數並顯示
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const res = await fetch(`https://api.counterapi.dev/v1/${COUNTER_NAMESPACE}/${COUNTER_KEY}`);
+                // 只有在成功取得資料 (非 404) 時才覆蓋原本的 0
+                if (res.ok) {
+                    const data = await res.json();
+                    if(data.count !== undefined) {
+                        document.getElementById('globalCount').innerText = data.count;
+                    }
+                }
+            } catch (e) {
+                console.log('無法載入計數器資料');
+            }
+        });
+
+        const COACH_PROMPT = `你是一位極簡、理智的空間管理顧問。說話必須極度簡潔、一針見血，不說廢話。請嚴格遵守以下格式回覆：
         
+【當使用者上傳圖片時】必須嚴格使用 '|||' 分隔為三個區塊：
 第一區塊：[物品名稱] - 折舊程度：[高/中/低]
 |||
-第二區塊：(請將空間效率、使用率或替代品等考量，濃縮成【1個】犀利且直指核心的綜合提問，方便使用者一次回覆，不超過30字)
+第二區塊：(將考量濃縮成【1個】直指核心的綜合提問，不超過30字)
 |||
-第三區塊：如果使用者尚未回答，請輸出「等待您回覆提問後生成判決...」；如果使用者已經回答，請給予【留存】或【移除】的最終判決，並用一句話(20字內)給出最佳行動建議。`;
+第三區塊：等待您回覆提問後生成判決...
+
+【當使用者回答提問後】不需要使用分隔符號，請直接輸出：
+第一行：【留存】或【移除】
+第二行：一句話(20字內)的最佳行動建議。`;
 
         const skeletonHTML = '<div class="skeleton"></div><div class="skeleton short"></div>';
 
@@ -587,9 +637,30 @@
                 document.getElementById('card3').style.setProperty('--success', '#cbd5e1');
                 
                 addMsg('user', '（已上傳影像，請進行專業分析）');
+
+                // 檢查是否為該裝置第一次詢問，若是則全域計數器 +1
+                incrementCounterIfNeeded();
+
                 callAI(true);
             };
             reader.readAsDataURL(file);
+        }
+
+        // 獨立出的計數器增長函式 (使用 localStorage 避免同一人重複計算)
+        async function incrementCounterIfNeeded() {
+            if (!localStorage.getItem('hasInquired_v1')) {
+                try {
+                    const res = await fetch(`https://api.counterapi.dev/v1/${COUNTER_NAMESPACE}/${COUNTER_KEY}/up`);
+                    const data = await res.json();
+                    if(data.count !== undefined) {
+                        document.getElementById('globalCount').innerText = data.count;
+                        // 寫入標記，這個瀏覽器以後不管怎麼重整都不會再重複 +1
+                        localStorage.setItem('hasInquired_v1', 'true');
+                    }
+                } catch (e) {
+                    console.log('計數器更新失敗');
+                }
+            }
         }
 
         function addMsg(role, text) {
@@ -638,6 +709,7 @@
             }
 
             try {
+                // 優先使用 pro 模型
                 const r = await fetch(url, { 
                     method: "POST", 
                     headers: { "Content-Type": "application/json" }, 
@@ -648,29 +720,36 @@
                 if(d.error) throw new Error(d.error.message || "API 連線失敗");
 
                 const reply = d.candidates[0].content.parts[0].text;
-                const parts = reply.split("|||");
                 
-                if (parts.length >= 3) {
-                    document.getElementById('block1').innerText = parts[0].trim();
-                    const coachQuestion = parts[1].trim(); // 取出關鍵提問
-                    document.getElementById('block3').innerText = parts[2].trim();
-                    
-                    if(!isFirst) {
-                        const resultText = parts[2].trim();
-                        if(resultText.includes('移除')) {
-                            document.getElementById('card3').style.setProperty('--success', '#ef4444'); 
-                        } else if (resultText.includes('留存')) {
-                            document.getElementById('card3').style.setProperty('--success', '#10b981'); 
-                        }
+                if (isFirst) {
+                    const parts = reply.split("|||");
+                    if (parts.length >= 3) {
+                        document.getElementById('block1').innerText = parts[0].trim();
+                        const coachQuestion = parts[1].trim(); // 取出關鍵提問
+                        document.getElementById('block3').innerText = parts[2].trim();
+                        
+                        // 核心顯示邏輯：把提問整合進聊天對話框
+                        const systemMsg = `分析報告已更新於上方。\n\n針對這件物品，我有一個關鍵問題：\n「${coachQuestion}」`;
+                        addMsg('coach', systemMsg);
+                    } else {
+                        addMsg('coach', reply);
+                        document.getElementById('block1').innerText = "狀態解析失敗";
                     }
-
-                    // 核心顯示邏輯：把提問整合進聊天對話框
-                    const systemMsg = isFirst 
-                        ? `分析報告已更新於上方。\n\n針對這件物品，我有一個關鍵問題：\n「${coachQuestion}」` 
-                        : "判決結果已出爐，請查看上方最終判定。";
-                    addMsg('coach', systemMsg);
                 } else {
-                    addMsg('coach', reply);
+                    // 第二回合：直接將回覆作為最終判決顯示，並清掉可能殘留的分隔符
+                    const cleanVerdict = reply.replace(/\|\|\|/g, '\n').trim();
+                    document.getElementById('block3').innerText = cleanVerdict;
+                    
+                    // 動態判斷邊框顏色
+                    if(cleanVerdict.includes('移除') || cleanVerdict.includes('丟棄')) {
+                        document.getElementById('card3').style.setProperty('--success', '#ef4444'); 
+                    } else if (cleanVerdict.includes('留存') || cleanVerdict.includes('保留')) {
+                        document.getElementById('card3').style.setProperty('--success', '#10b981'); 
+                    } else {
+                        document.getElementById('card3').style.setProperty('--success', '#f59e0b'); 
+                    }
+                    
+                    addMsg('coach', "判決結果已出爐，請查看上方最終判定。");
                 }
                 
                 currentHistory.push({ role: 'model', parts: [{ text: reply }] });
