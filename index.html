@@ -615,6 +615,8 @@
 
         const COACH_PROMPT = `你是一位極簡、理智的空間管理顧問。說話必須極度簡潔、一針見血，不說廢話。請嚴格遵守以下格式回覆：
         
+【防呆判定】若圖片中是人類、活體動物（如貓、狗）、風景或其他「非無生命物品」，請直接回覆：「⚠️ 偵測到非物品。生命或風景不可斷捨離，請重新整理網頁並上傳真實的生活物品照片。」，絕對不要輸出 ||| 符號。
+
 【當使用者上傳圖片時】必須嚴格使用 '|||' 分隔為三個區塊：
 第一區塊：[物品名稱] - 折舊程度：[高/中/低]
 |||
@@ -714,6 +716,7 @@
             document.getElementById('sendBtn').disabled = true;
 
             const url = "https://giveaway-proxy.miachan.workers.dev";
+            let enableInput = true;
 
             if (isFirst) {
                 currentHistory = [{ role: "user", parts: [{ text: "指令：" + COACH_PROMPT }, { inlineData: { mimeType: imgMime, data: imgB64 } }] }];
@@ -745,8 +748,11 @@
                         const systemMsg = `分析報告已更新於上方。\n\n針對這件物品，我有一個關鍵問題：\n「${coachQuestion}」`;
                         addMsg('coach', systemMsg);
                     } else {
+                        // 觸發防呆機制，中止分析
                         addMsg('coach', reply);
-                        document.getElementById('block1').innerText = "狀態解析失敗";
+                        document.getElementById('block1').innerHTML = '<span style="color: var(--danger); font-weight: 600;">⚠️ 偵測為非物品</span>';
+                        document.getElementById('block3').innerHTML = '<span style="color: var(--text-muted);">分析已終止</span>';
+                        enableInput = false; // 阻擋使用者繼續對話
                     }
                 } else {
                     // 第二回合：直接將回覆作為最終判決顯示，並清掉可能殘留的分隔符
@@ -764,19 +770,21 @@
                     
                     // 讓最終判決同步顯示在對話框內，避免視覺焦點轉移
                     addMsg('coach', "【最終判決】\n" + cleanVerdict);
+                    enableInput = false; // 流程結束，鎖定輸入框
                 }
                 
                 currentHistory.push({ role: 'model', parts: [{ text: reply }] });
                 
-                document.getElementById('userInput').disabled = false;
-                document.getElementById('sendBtn').disabled = false;
-                document.getElementById('userInput').focus();
             } catch (err) { 
                 addMsg('coach', "系統連線異常：" + err.message); 
-                document.getElementById('userInput').disabled = false;
-                document.getElementById('sendBtn').disabled = false;
+                enableInput = true;
             } finally { 
                 setStatus(""); 
+                if (enableInput) {
+                    document.getElementById('userInput').disabled = false;
+                    document.getElementById('sendBtn').disabled = false;
+                    document.getElementById('userInput').focus();
+                }
             }
         }
 
